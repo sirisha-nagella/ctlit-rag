@@ -1,6 +1,6 @@
 
-"""
 
+"""
 Turn one trial record into a small list of self-contained text chunks.
 Each chunk = {id, text, metadata}. No embedding yet - just clean text."""
 
@@ -29,7 +29,7 @@ def trial_to_chunks(study):
     chunks.append({
         "id": f"{nct_id}_overview",
         "text": overview,
-        "metadata": {"nct_id": nct_id, "title": title, "section": "overview"}
+        "metadata": {"source": "clinical_trial", "nct_id": nct_id, "title": title, "section": "overview"}
     })
 
     # Chunk 2 - eligibility. Only if the trial actually lists criteria.
@@ -41,10 +41,33 @@ def trial_to_chunks(study):
         chunks.append({
             "id": f"{nct_id}_eligibility",
             "text": eligibility,
-            "metadata": {"nct_id": nct_id, "title": title, "section": "eligibility"},
+            "metadata": {"source": "clinical_trial", "nct_id": nct_id, "title": title, "section": "eligibility"},
         })
 
     return chunks
+
+# this is literature paper chunking
+
+def paper_to_chunks(paper):
+    """A paper is already compact -> one self-contained chunk."""
+    pmid = paper["pmid"]
+    title = paper["title"]
+    abstract = paper["abstract"]
+
+    text = f"Research paper (PMID {pmid}): {title}. Abstract: {abstract}"
+
+    return [{
+        "id": f"PMID{pmid}",
+        "text": text,
+        "metadata": {
+            "source": "literature",      # <- the tag that coexists with trials
+            "pmid": pmid,
+            "title": title,
+            "section": "abstract",
+        },
+
+    }]
+
 
 # self-test: chunk one saved trial and print the pieces
 

@@ -24,10 +24,13 @@ def search(query, k=3):
 
 if __name__ == "__main__":
     #query = "trials about hepatitis B treatment"
-    query = "immune system therapy for liver infection"
+    #query = "immune system therapy for liver infection"
+    query = "hepatitis C treatment with sofosbuvir"
     print(f"Query: {query}\n")
 
-    for doc, meta, dist in search(query):
-        print(f"[distance {dist:.3f}] {meta['nct_id']} ({meta["section"]})")
-        print(f"   {doc[:160]}...\n")
+    for doc, meta, dist in search(query, k=6):
+        source = meta["source"]                        # clinical_trial | literature
+        ref = meta.get("nct_id") or meta.get("pmid")   # Whichever ID it has
+        print(f"[{dist:.3f}] {source:14} {ref}")
+        print(f"   {doc[:130]}...\n")
 
