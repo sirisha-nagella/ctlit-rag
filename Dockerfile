@@ -11,6 +11,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install deps first so this layer is cached unless requirements.txt changes
 COPY requirements.txt .
+# Fargate has no GPU: install the CPU-only torch build first (the default CUDA
+# wheel is ~2GB of libraries that would never run here). 2.12.0+cpu satisfies
+# the `torch==2.12.0` pin in requirements.txt, so the next step won't re-fetch it.
+RUN pip install --no-cache-dir torch==2.12.0 --index-url https://download.pytorch.org/whl/cpu
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Now bring in only what the running app needs (rest excluded via .dockerignore)

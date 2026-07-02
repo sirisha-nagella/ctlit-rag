@@ -4,6 +4,7 @@ chromadb==0.5.5
 streamlit==1.38.0
 boto3==1.43.36
 botocore==1.43.36
+# In Docker, torch is installed CPU-only (see Dockerfile) to avoid the CUDA build.
 torch==2.12.0
 transformers==4.57.6
 ollama==0.3.3
