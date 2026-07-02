@@ -6,7 +6,7 @@ constrained to the provided context.
 
 import ollama
 
-MODEL = "llama3.1:8b"  # same local model family as previous project
+MODEL = "llama3.2:3b"  # same local model family as previous project
 
 SYSTEM = (
     "You are a clinical trials assistant. Answer the user's question using "

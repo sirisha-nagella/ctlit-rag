@@ -3,3 +3,12 @@ data/
 chroma_store/
 __pycache__/
 *.pyc
+.DS_Store
+
+# generated vector-store artifacts (Chroma is the live store, not FAISS)
+chunks.json
+embeddings.npy
+vector_store.faiss
+
+# large demo video (keep mp4/pngs, host webm elsewhere)
+screenshots/*.webm
