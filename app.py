@@ -15,6 +15,14 @@ def load_pipeline():
 
 ask = load_pipeline()
 
+
+@st.cache_data(show_spinner=False)
+def run_query(query):
+    # Cache by query text so Streamlit reruns (e.g. opening a source
+    # expander) don't re-run retrieval + the LLM for the same question.
+    return ask(query)
+
+
 st.title("Clinical Trial & Literature RAG Assistant")
 st.caption("Ask about Gilead trials and related published research. Answers are grounded in retrieved sources.")
 
@@ -22,7 +30,7 @@ query = st.text_input("Your question:", placeholder="e.g. What hepatitis B trial
 
 if query:
     with st.spinner("Searching and gathering..."):
-        answer, hits, confident = ask(query)
+        answer, hits, confident = run_query(query)
 
     st.markdown("### Answer")
     if confident:
@@ -33,11 +41,14 @@ if query:
 
     # always show what was retrieved, so the answer is auditable
     st.markdown("### Sources")
-    st.caption(f"Closest match distance: {hits[0][2]:.3f}  "
-               f"(threshold 0.50 - {'within' if confident else 'beyond'} range)")
+    if hits:
+        st.caption(f"Closest match distance: {hits[0][2]:.3f}  "
+                   f"(threshold 0.50 - {'within' if confident else 'beyond'} range)")
 
-    for doc, meta, dist in hits:
-        source = meta["source"].replace("_", " ")
-        ref = meta.get("nct_id") or meta.get("pmid")
-        with st.expander(f"{ref} · {source} · distance {dist:.3f}"):
-            st.write(doc)
+        for doc, meta, dist in hits:
+            source = meta["source"].replace("_", " ")
+            ref = meta.get("nct_id") or meta.get("pmid")
+            with st.expander(f"{ref} · {source} · distance {dist:.3f}"):
+                st.write(doc)
+    else:
+        st.caption("No sources retrieved.")

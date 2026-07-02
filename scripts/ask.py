@@ -11,17 +11,22 @@ from rag.generator import generate_answer
 # Tuned from observed distances: tight ~0.17, good ~0.28, weak/off-topic > 0.5
 DISTANCE_THRESHOLD = 0.50
 
+NO_MATCH = (
+    "I don't have a trial or paper in my knowledge base that covers "
+    "this question well enough to answer it reliably."
+)
+
 def ask(query, k=3):
     hits = search(query, k)    #[(doc, meta, dist), ...]
 
+    if not hits:               # nothing in the store matched at all
+        return NO_MATCH, [], False
+
     best_distance = hits[0][2]  # distance of the closest chunk
     if best_distance > DISTANCE_THRESHOLD:
-        answer = (
-            "I don't have a trial or paper in my knowledge base that covers "
-            "this question well enough to answer it reliably."
-        )
-        return answer, hits, False     # False = not confident
-    
+        return NO_MATCH, hits, False   # False = not confident
+
+
     chunks = [doc for doc, meta, dist in hits]
     answer = generate_answer(query, chunks)
     return answer, hits, True          # True = confident
