@@ -4,6 +4,7 @@ Two steps: ESearch (query -> PMIDs) then EFetch (PMIDs -> abstracts).
 Public API, no key needed for low volume.
 """
 
+import os
 import requests
 import xml.etree.ElementTree as ET
 
@@ -11,7 +12,9 @@ ESEARCH = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 EFETCH = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi"
 
 TOOL = "ctlit-rag"
-EMAIL = "sirisha.nagella@gmail.com" # our email ID
+# NCBI asks for a contact email so they can reach you before throttling.
+# Override with NCBI_EMAIL; the default is just a fallback.
+EMAIL = os.getenv("NCBI_EMAIL", "sirisha.nagella@gmail.com")
 
 def _search_pmids(query, max_results):
     params = {

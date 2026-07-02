@@ -13,6 +13,13 @@
       "entryPoint": ["sh", "-c"],
       "command": ["ollama serve & sleep 10 && ollama pull llama3.2:3b && wait"],
       "portMappings": [{ "containerPort": 11434, "protocol": "tcp" }],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "ollama list | grep -q llama3.2:3b || exit 1"],
+        "interval": 15,
+        "timeout": 5,
+        "retries": 5,
+        "startPeriod": 300
+      },
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
@@ -28,7 +35,7 @@
       "essential": true,
       "portMappings": [{ "containerPort": 8501, "protocol": "tcp" }],
       "environment": [{ "name": "OLLAMA_HOST", "value": "http://localhost:11434" }],
-      "dependsOn": [{ "containerName": "ollama", "condition": "START" }],
+      "dependsOn": [{ "containerName": "ollama", "condition": "HEALTHY" }],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
