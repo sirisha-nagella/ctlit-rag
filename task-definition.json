@@ -1,0 +1,42 @@
+{
+  "family": "ctlit-rag-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "2048",
+  "memory": "8192",
+  "executionRoleArn": "arn:aws:iam::<YOUR_AWS_ACCOUNT_ID>:role/ctlit-rag-execution-role",
+  "containerDefinitions": [
+    {
+      "name": "ollama",
+      "image": "ollama/ollama:latest",
+      "essential": true,
+      "entryPoint": ["sh", "-c"],
+      "command": ["ollama serve & sleep 10 && ollama pull llama3.2:3b && wait"],
+      "portMappings": [{ "containerPort": 11434, "protocol": "tcp" }],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/ctlit-rag",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ollama"
+        }
+      }
+    },
+    {
+      "name": "app",
+      "image": "<YOUR_AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/ctlit-rag:latest",
+      "essential": true,
+      "portMappings": [{ "containerPort": 8501, "protocol": "tcp" }],
+      "environment": [{ "name": "OLLAMA_HOST", "value": "http://localhost:11434" }],
+      "dependsOn": [{ "containerName": "ollama", "condition": "START" }],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/ctlit-rag",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "app"
+        }
+      }
+    }
+  ]
+}

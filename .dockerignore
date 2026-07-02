@@ -1,0 +1,32 @@
+.venv
+.git
+.gitignore
+__pycache__
+*.pyc
+
+# dev-only scratch scripts, not used by the running app
+explore_api.py
+explore_efetch.py
+explore_pubmed.py
+peek_trial.py
+measure_chunks.py
+generate.py
+retrieve.py
+chunking.py
+test_chunker.py
+test_s3.py
+
+# dead vector store artifacts (Chroma is the live store, not FAISS)
+vector_store.faiss
+embeddings.npy
+chunks.json
+
+# corpus build scripts - only needed to rebuild chroma_store, not to serve it
+build_corpus.py
+build_chunks.py
+build_embedding.py
+build_vector_store.py
+chunker.py
+
+data
+data_sources
