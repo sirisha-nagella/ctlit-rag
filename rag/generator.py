@@ -24,15 +24,20 @@ SYSTEM = (
 )
 
 
-def _generate_ollama(query, chunks):
+def _build_prompt(query, chunks):
     """chunks: list of context strings retrieved from the vector store."""
     context = "\n\n".join(chunks)
-    prompt = (
+    return (
         f"Trial context:\n{context}\n\n"
         f"Question: {query}\n\n"
         f"Answer using only the context above:"
     )
 
+
+def _generate_ollama(query, chunks):
+    prompt = _build_prompt(query, chunks)
+
+    start = time.time()
     response = ollama.chat(
         model=MODEL,
         messages=[
@@ -41,15 +46,18 @@ def _generate_ollama(query, chunks):
         ],
         options={"temperature": 0.2},  # low temp = faithful, less invention
     )
-    return response["message"]["content"].strip()
+    latency_s = time.time() - start
+
+    answer = response["message"]["content"].strip()
+    input_tokens = response.get("prompt_eval_count", 0)
+    output_tokens = response.get("eval_count", 0)
+    query_id = log_query(query, "ollama", input_tokens, output_tokens, latency_s)
+
+    return answer, "ollama", query_id
+
 
 def _generate_bedrock(query, chunks):
-    context = "\n\n".join(chunks)
-    prompt = (
-        f"Trial context:\n{context}\n\n"
-        f"Question: {query}\n\n"
-        f"Answer using only the context above:"
-    )
+    prompt = _build_prompt(query, chunks)
 
     model_key, model_id = router.pick_model()
 
@@ -67,15 +75,7 @@ def _generate_bedrock(query, chunks):
 
 
 def generate_answer(query, chunks):
-    """
-    Returns (answer, model_key, query_id).
-    For the ollama backend, model_key and query_id are None - no
-    A/B tracking on the local path, matching pre-v0.7.0 behaviour.
-    """
-
+    """Returns (answer, model_key, query_id) - same shape for either backend."""
     if LLM_BACKEND == "bedrock":
         return _generate_bedrock(query, chunks)
-    
-    answer = _generate_ollama(query, chunks)
-    return answer, None, None
-
+    return _generate_ollama(query, chunks)

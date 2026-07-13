@@ -6,23 +6,18 @@ logs/metrics.jsonl (one line per query) and logs/feedback.jsonl
 Run from project root: python3 -m scripts.analyze_ab
 """
 
-import json
 import statistics
 from pathlib import Path
+
+from rag.jsonl import read_jsonl
 
 METRICS_PATH = Path("logs/metrics.jsonl")
 FEEDBACK_PATH = Path("logs/feedback.jsonl")
 
-def _load_jsonl(path):
-    if not path.exists():
-        return[]
-    with open(path) as f:
-        return [json.loads(line) for line in f if line.strip()]
-    
 
 def analyze():
-    metrics = _load_jsonl(METRICS_PATH)
-    feedback = _load_jsonl(FEEDBACK_PATH)
+    metrics = read_jsonl(METRICS_PATH)
+    feedback = read_jsonl(FEEDBACK_PATH)
 
     if not metrics:
         print(f"No data in {METRICS_PATH} yet. Run some queries with LLM_BACKEND=bedrock first.")
