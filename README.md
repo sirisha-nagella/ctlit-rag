@@ -137,6 +137,7 @@ The tests are hermetic (no network, no data files).
 | `rag/llm/bedrock_client.py` | Bedrock Converse API client, retries on throttling |
 | `rag/metrics.py` | per-query latency/token logging (`logs/metrics.jsonl`) |
 | `rag/feedback.py` | thumbs up/down logging (`logs/feedback.jsonl`), linked by `query_id` |
+| `rag/jsonl.py` | shared append/read helpers used by `metrics.py`, `feedback.py`, `analyze_ab.py` |
 | `scripts/` | fetch / load / search / ask + `rebuild_store.sh` |
 | `scripts/analyze_ab.py` | compares latency/tokens/feedback across model arms |
 | `data_sources/` | ClinicalTrials.gov and PubMed clients |
