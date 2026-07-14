@@ -20,26 +20,28 @@ def ask(query, k=3):
     hits = search(query, k)    #[(doc, meta, dist), ...]
 
     if not hits:               # nothing in the store matched at all
-        return NO_MATCH, [], False
+        return NO_MATCH, [], False, None, None
 
     best_distance = hits[0][2]  # distance of the closest chunk
     if best_distance > DISTANCE_THRESHOLD:
-        return NO_MATCH, hits, False   # False = not confident
+        return NO_MATCH, hits, False, None, None   # False = not confident
 
 
     chunks = [doc for doc, meta, dist in hits]
-    answer = generate_answer(query, chunks)
-    return answer, hits, True          # True = confident
+    answer, model_key, query_id = generate_answer(query, chunks)
+    return answer, hits, True, model_key, query_id     # True = confident
 
 if __name__ == "__main__":
-    #query = "what hepatitis B trials are there and what do they study?"
+    query = "what hepatitis B trials are there and what do they study?"
     #query = "What are the best insulin treatments for type 2 diabetes?"
-    query = "What cancer immunotherapy trials exist?"
-    answer, hits, confident = ask(query)
+    #query = "What cancer immunotherapy trials exist?"
+    answer, hits, confident, model_key, query_id = ask(query)
 
     print(f"Q: {query}\n")
     print(f"A: {answer}\n")
-    print(f"Confident: {confident} (best distance: {hits[0][2]:.3f})")
+    print(f"Confident: {confident} (best distance: {hits[0][2]:.3f})" if hits else f"Confident: {confident}")
+    if model_key:
+        print(f"Model: {model_key} (query_id: {query_id})")
     print("Sources:")
     for doc, meta, dist in hits:
         ref = meta.get("nct_id") or meta.get("pmid")
