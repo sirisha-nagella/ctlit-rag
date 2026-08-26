@@ -142,6 +142,7 @@ The tests are hermetic (no network, no data files).
 | `scripts/analyze_ab.py` | compares latency/tokens/feedback across model arms |
 | `data_sources/` | ClinicalTrials.gov and PubMed clients |
 | `tests/` | hermetic unit tests |
+| `evals/` | retrieval, gate-calibration, and groundedness checks against a golden query set (`python -m evals.run_eval`) |
 | `archive/` | superseded scripts, kept for reference (see below) |
 | `Dockerfile`, `docker-compose.yml`, `task-definition.json` | deployment |
 
