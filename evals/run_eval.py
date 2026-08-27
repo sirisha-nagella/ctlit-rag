@@ -12,6 +12,7 @@ from scripts.ask import ask, DISTANCE_THRESHOLD
 
 GOLDEN_PATH = Path("evals/fixtures/golden_queries.jsonl")
 NCT_RE = re.compile(r"NCT\d{8}")
+PMID_RE = re.compile(r"PMID\s*:?\s*(\d+)", re.IGNORECASE)
 
 
 def load_golden_queries():
@@ -37,7 +38,7 @@ def main():
 
             if ok:
                 answer, _, _, _, _ = ask(q["query"])
-                cited = set(NCT_RE.findall(answer))
+                cited = set(NCT_RE.findall(answer)) | set(PMID_RE.findall(answer))
                 ungrounded = cited - set(retrieved_refs)
                 grounded = len(ungrounded) == 0
                 ok = ok and grounded
