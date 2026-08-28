@@ -42,6 +42,9 @@ PubMed E-utilities ─────┘                 │
         Docker → AWS ECS Fargate  (ollama sidecar + app container)
 ```
 
+`evals/run_eval.py` tests this pipeline against a fixed golden query set — see
+**Eval harness** below.
+
 ## Local setup
 
 ```bash
@@ -100,6 +103,56 @@ python3 -m scripts.analyze_ab
 (`ThrottlingException` / `ServiceUnavailableException` / `ModelTimeoutException`)
 before raising — hit this for real during testing, not just defensive code.
 
+### Eval harness
+
+`evals/run_eval.py` checks retrieval and generation quality against a fixed,
+9-query golden set (`evals/fixtures/golden_queries.jsonl`) spanning hepatitis
+B/C, cystic fibrosis, oncology, HIV, and NASH trials/papers, plus two refusal
+cases (one near-miss, one genuinely out-of-domain). No LLM-as-judge anywhere
+in the harness — every check is deterministic, the same grounding check the
+Bedrock A/B design spec already made for its own quality signal (see
+`docs/superpowers/specs/2026-07-03-bedrock-ab-testing-design.md`).
+
+```bash
+python -m evals.run_eval
+```
+
+runs two phases, free and instant:
+
+- **Phase 1 — retrieval + gate calibration:** for each query, checks whether
+  the expected trial/paper is actually retrieved, and whether the
+  `DISTANCE_THRESHOLD = 0.50` confidence gate in `scripts/ask.py` fires
+  correctly (answers when it should, refuses when it should).
+- **Phase 2 — groundedness:** regex-checks every generated answer for cited
+  `NCT` IDs and `PMID`s, and flags any that weren't actually among the
+  retrieved chunks — i.e. catches hallucinated trial or paper references.
+
+A third, **opt-in** phase compares generation quality across all three
+backends directly (bypassing the random A/B router, so nothing here is a live
+A/B trial — see `rag/llm/router.py`):
+
+```bash
+RUN_PHASE3=1 python -m evals.run_eval
+```
+
+This makes real, billed calls to Bedrock (Haiku + Nova Micro) in addition to
+the free local Ollama calls, and needs AWS credentials configured — so it's
+not part of a routine eval run. If Bedrock isn't reachable, that backend is
+reported as skipped rather than crashing the run. Example output from a real
+run, all three backends grounded on all 7 answerable queries:
+
+```
+backend       n  grounded  avg latency(s)  avg in tok  avg out tok  skipped
+ollama        7         7            3.96       824.6        141.0        0
+haiku         7         7            2.55       935.9        219.4        0
+nova_micro    7         7            0.62       801.9        105.7        0
+```
+
+No hallucinations on any backend in this run — the more interesting finding
+is the latency/verbosity spread: Nova Micro answered over 6x faster than
+Ollama and produced roughly half the output tokens of Haiku for the same
+questions.
+
 ## Deploy (AWS ECS Fargate)
 
 1. Build and push the image to ECR:
@@ -126,31 +179,6 @@ python -m pytest tests/        # or: python tests/test_chunking.py
 
 The tests are hermetic (no network, no data files).
 
-## Evals
-
-```bash
-python -m evals.run_eval
-```
-
-Runs the golden query set (`evals/fixtures/golden_queries.jsonl`) through the
-real retrieval + gating + generation path:
-
-- **Phase 1 — retrieval + confidence gating:** `should_answer` queries must
-  retrieve their expected trial/paper and pass the confidence gate;
-  `should_refuse` queries must be gated out.
-- **Phase 2 — groundedness:** any NCT / PMID cited in the answer must be one
-  that was actually retrieved.
-- **Phase 3 — backend comparison (opt-in):** re-runs the passing queries
-  against all three generation backends (Ollama, Claude Haiku 4.5, Nova Micro)
-  and reports grounded rate, latency, and token counts per backend. Off by
-  default because it makes real, paid Bedrock calls:
-
-  ```bash
-  RUN_PHASE3=1 python -m evals.run_eval
-  ```
-
-  Backends without working credentials are skipped, not failed.
-
 ## Project layout
 
 | Path | Purpose |
@@ -167,7 +195,8 @@ real retrieval + gating + generation path:
 | `scripts/analyze_ab.py` | compares latency/tokens/feedback across model arms |
 | `data_sources/` | ClinicalTrials.gov and PubMed clients |
 | `tests/` | hermetic unit tests |
-| `evals/` | golden-query harness: retrieval + gating (Phase 1), groundedness (Phase 2), opt-in backend comparison (Phase 3) — see [Evals](#evals) |
+| `evals/fixtures/golden_queries.jsonl` | 9-query golden set (7 should-answer, 2 should-refuse) |
+| `evals/run_eval.py` | Phase 1 retrieval/gate-calibration, Phase 2 groundedness (NCT+PMID), Phase 3 opt-in backend comparison |
 | `archive/` | superseded scripts, kept for reference (see below) |
 | `Dockerfile`, `docker-compose.yml`, `task-definition.json` | deployment |
 
