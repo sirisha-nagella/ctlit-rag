@@ -126,6 +126,31 @@ python -m pytest tests/        # or: python tests/test_chunking.py
 
 The tests are hermetic (no network, no data files).
 
+## Evals
+
+```bash
+python -m evals.run_eval
+```
+
+Runs the golden query set (`evals/fixtures/golden_queries.jsonl`) through the
+real retrieval + gating + generation path:
+
+- **Phase 1 — retrieval + confidence gating:** `should_answer` queries must
+  retrieve their expected trial/paper and pass the confidence gate;
+  `should_refuse` queries must be gated out.
+- **Phase 2 — groundedness:** any NCT / PMID cited in the answer must be one
+  that was actually retrieved.
+- **Phase 3 — backend comparison (opt-in):** re-runs the passing queries
+  against all three generation backends (Ollama, Claude Haiku 4.5, Nova Micro)
+  and reports grounded rate, latency, and token counts per backend. Off by
+  default because it makes real, paid Bedrock calls:
+
+  ```bash
+  RUN_PHASE3=1 python -m evals.run_eval
+  ```
+
+  Backends without working credentials are skipped, not failed.
+
 ## Project layout
 
 | Path | Purpose |
@@ -142,7 +167,7 @@ The tests are hermetic (no network, no data files).
 | `scripts/analyze_ab.py` | compares latency/tokens/feedback across model arms |
 | `data_sources/` | ClinicalTrials.gov and PubMed clients |
 | `tests/` | hermetic unit tests |
-| `evals/` | retrieval, gate-calibration, and groundedness checks against a golden query set (`python -m evals.run_eval`) |
+| `evals/` | golden-query harness: retrieval + gating (Phase 1), groundedness (Phase 2), opt-in backend comparison (Phase 3) — see [Evals](#evals) |
 | `archive/` | superseded scripts, kept for reference (see below) |
 | `Dockerfile`, `docker-compose.yml`, `task-definition.json` | deployment |
 
