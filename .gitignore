@@ -12,3 +12,6 @@ vector_store.faiss
 
 # large demo video (keep mp4/pngs, host webm elsewhere)
 screenshots/*.webm
+
+# generated runtime telemetry
+logs/
