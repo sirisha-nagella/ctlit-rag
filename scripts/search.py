@@ -25,7 +25,7 @@ def search(query, k=3):
 if __name__ == "__main__":
     #query = "trials about hepatitis B treatment"
     #query = "immune system therapy for liver infection"
-    query = "hepatitis C treatment with sofosbuvir"
+    query = "hepatitis C treatment research"
     print(f"Query: {query}\n")
 
     for doc, meta, dist in search(query, k=6):
